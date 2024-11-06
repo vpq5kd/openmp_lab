@@ -3,22 +3,28 @@
 #include <stdlib.h> // free, realloc
 #include <time.h> // struct timespec, clock_gettime, CLOCK_REALTIME
 #include <errno.h>
-
+#include <omp.h>
 
 // computes the geometric mean of a set of values.
 // You should use OpenMP to make faster versions of this.
 // Keep the underlying sum-of-logs approach.
 double geomean(unsigned char *s, size_t n) {
     double answer = 0;
-
-	#pragma omp parallel for
+	#pragma omp parallel
+	{
+	double local_answer = 0;
+	#pragma omp for nowait
     for(int i=0; i<n; i+=1) {
-		
+			
         if (s[i] > 0){ 
-			#pragma omp atomic update
-			answer += log(s[i]) / n;
+			
+			local_answer += log(s[i]) / n;
 		}
     }
+
+	#pragma omp atomic update
+	answer += local_answer;
+	}
     return exp(answer);
 }
 
